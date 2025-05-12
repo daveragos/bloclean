@@ -28,7 +28,8 @@ class CreateFeatureCommand extends Command<int> {
 
     if (featureName == null || featureName.isEmpty) {
       _logger.err(
-          'Feature name is required. Use --name or -n to specify the feature name.');
+        '''Feature name is required. Use --name or -n to specify the feature name.''',
+      );
       return ExitCode.usage.code;
     }
 
@@ -56,8 +57,7 @@ class CreateFeatureCommand extends Command<int> {
       ];
 
       for (final dir in directories) {
-        final directory = Directory('${featurePath.path}/$dir');
-        directory.createSync(recursive: true);
+        Directory('${featurePath.path}/$dir').createSync(recursive: true);
       }
 
       _logger.info('Feature "$featureName" created successfully.');

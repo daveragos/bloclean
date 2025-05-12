@@ -15,7 +15,7 @@ class CreateProjectCommand extends Command<int> {
 
   @override
   String get description =>
-      'Creates a new Flutter project with a clean architecture folder structure.';
+      '''Creates a new Flutter project with a clean architecture folder structure.''';
 
   @override
   String get name => 'create-project';
@@ -28,7 +28,8 @@ class CreateProjectCommand extends Command<int> {
 
     if (projectName == null || projectName.isEmpty) {
       _logger.err(
-          'Project name is required. Use --name or -n to specify the project name.');
+        '''Project name is required. Use --name or -n to specify the project name.''',
+      );
       return ExitCode.usage.code;
     }
 
@@ -70,7 +71,7 @@ class CreateProjectCommand extends Command<int> {
 
       // Adjust the template flag for `flutter create` based on the starter template
       final templateFlag =
-          starterTemplate == 'counter' ? '--sample=counter' : '--no-sample';
+          starterTemplate == 'counter' ? '--sample=counter' : '-e';
 
       // Run `flutter create` command with org name, platforms, template, and starter template
       final result = await Process.run(
@@ -121,8 +122,7 @@ class CreateProjectCommand extends Command<int> {
       ];
 
       for (final dir in directories) {
-        final directory = Directory(dir);
-        directory.createSync(recursive: true);
+        Directory(dir).createSync(recursive: true);
       }
 
       _logger.info('Flutter project "$projectName" created successfully.');

@@ -1,8 +1,8 @@
+import 'dart:io';
+
 import 'package:args/args.dart';
 import 'package:args/command_runner.dart';
 import 'package:bloclean/src/commands/commands.dart';
-import 'package:bloclean/src/commands/create_feature_command.dart';
-import 'package:bloclean/src/commands/create_project_command.dart';
 import 'package:bloclean/src/version.dart';
 import 'package:cli_completion/cli_completion.dart';
 import 'package:mason_logger/mason_logger.dart';
@@ -52,6 +52,13 @@ class BlocleanCommandRunner extends CompletionCommandRunner<int> {
   final Logger _logger;
   final PubUpdater _pubUpdater;
 
+  void _updateLog(String message) {
+    // Clear the last line in the terminal
+    stdout.write('\x1B[1A\x1B[2K');
+    // Print the updated message
+    _logger.info(message);
+  }
+
   @override
   Future<int> run(Iterable<String> args) async {
     try {
@@ -59,6 +66,11 @@ class BlocleanCommandRunner extends CompletionCommandRunner<int> {
       if (topLevelResults['verbose'] == true) {
         _logger.level = Level.verbose;
       }
+
+      // Example usage of _updateLog during navigation
+      // Replace this with the actual logic for handling navigation
+      _updateLog('Navigating options...');
+
       return await runCommand(topLevelResults) ?? ExitCode.success.code;
     } on FormatException catch (e, stackTrace) {
       // On format errors, show the commands error message, root usage and

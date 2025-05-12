@@ -1,6 +1,6 @@
-import 'package:test/test.dart';
-import 'package:mason_logger/mason_logger.dart';
 import 'package:bloclean/src/commands/create_project_command.dart';
+import 'package:mason_logger/mason_logger.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('CreateProjectCommand', () {
@@ -17,7 +17,8 @@ void main() {
       expect(
         command.description,
         equals(
-            'Creates a new Flutter project with a clean architecture folder structure.'),
+          'Creates a new Flutter project with a clean architecture folder structure.',
+        ),
       );
     });
 
