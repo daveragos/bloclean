@@ -41,20 +41,9 @@ class BlocleanCommandRunner extends CompletionCommandRunner<int> {
       );
 
     // Add sub commands
-    addCommand(SampleCommand(logger: _logger));
     addCommand(UpdateCommand(logger: _logger, pubUpdater: _pubUpdater));
     addCommand(CreateFeatureCommand(logger: _logger));
     addCommand(CreateProjectCommand(logger: _logger));
-
-    // Update help messages for new commands
-    argParser.addCommand(
-        'create-project',
-        ArgParser()
-          ..addOption('name', help: 'Name of the Flutter project to create.'));
-    argParser.addCommand(
-        'create-feature',
-        ArgParser()
-          ..addOption('name', help: 'Name of the feature to scaffold.'));
   }
 
   @override
