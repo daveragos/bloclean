@@ -147,6 +147,45 @@ class CreateProjectCommand extends Command<int> {
         Directory(dir).createSync(recursive: true);
       }
 
+      // Append folder structure and resources to README.md
+      final readmeFile = File('README.md');
+      const folderStructure = '''
+## Folder Structure
+
+```
+lib/
+  config/
+  core/
+    bloc/
+    database/
+    di/
+    error/
+    loaders/
+    networks/
+    shared/
+    theme/
+    widgets/
+  features/
+```
+
+''';
+      const resources = '''
+## Suggested Resources
+
+- [Flutter Clean Architecture Implementation Guide](https://gist.github.com/ahmedyehya92/0257809d6fbd3047e408869f3d747a2c#file-flutter-clean-architecture-implementation-guide-md)
+- [Reso Coder Tutorials on Flutter TDD Clean Architecture](https://resocoder.com/category/tutorials/flutter/tdd-clean-architecture/)
+- [YouTube: Flutter Clean Architecture by Reso Coder](https://www.youtube.com/watch?v=ELFORM9fmss)
+
+''';
+
+      if (readmeFile.existsSync()) {
+        readmeFile.writeAsStringSync(folderStructure + resources,
+            mode: FileMode.append,);
+      } else {
+        readmeFile.writeAsStringSync(
+            '# $projectName\n\n$folderStructure$resources',);
+      }
+
       _logger.info('Flutter project "$projectName" created successfully.');
       return ExitCode.success.code;
     } catch (e) {
