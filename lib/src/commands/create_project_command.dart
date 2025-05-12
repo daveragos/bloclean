@@ -43,31 +43,49 @@ class CreateProjectCommand extends Command<int> {
     try {
       _logger.info('Creating Flutter project "$projectName"...');
 
-      final orgName =
-          _logger.prompt('Enter the organization name (e.g., com.example):');
-      final stateManagement = _logger.chooseOne(
-        'Choose a state management solution:',
-        choices: ['flutter_bloc', 'provider', 'riverpod'],
-        defaultValue: 'flutter_bloc',
-      );
+      final useDefaults =
+          _logger.confirm('Do you want to use the default options?');
 
-      final platforms = _logger.chooseAny(
-        'Select the platforms to support:',
-        choices: ['android', 'ios', 'web', 'linux', 'macos', 'windows'],
-        defaultValues: ['android', 'ios', 'web'],
-      );
+      String orgName;
+      String stateManagement;
+      List<String> platforms;
+      String template;
+      String starterTemplate;
 
-      final template = _logger.chooseOne(
-        'Choose a Flutter project template:',
-        choices: ['app', 'package', 'plugin'],
-        defaultValue: 'app',
-      );
+      if (useDefaults) {
+        _logger.info('Using default options...');
+        orgName = 'com.example';
+        stateManagement = 'flutter_bloc';
+        platforms = ['android', 'ios', 'web'];
+        template = 'app';
+        starterTemplate = 'empty';
+      } else {
+        orgName =
+            _logger.prompt('Enter the organization name (e.g., com.example):');
+        stateManagement = _logger.chooseOne(
+          'Choose a state management solution:',
+          choices: ['flutter_bloc', 'provider', 'riverpod'],
+          defaultValue: 'flutter_bloc',
+        );
 
-      final starterTemplate = _logger.chooseOne(
-        'Choose a starter template:',
-        choices: ['empty', 'counter'],
-        defaultValue: 'empty',
-      );
+        platforms = _logger.chooseAny(
+          'Select the platforms to support:',
+          choices: ['android', 'ios', 'web', 'linux', 'macos', 'windows'],
+          defaultValues: ['android', 'ios', 'web'],
+        );
+
+        template = _logger.chooseOne(
+          'Choose a Flutter project template:',
+          choices: ['app', 'package', 'plugin'],
+          defaultValue: 'app',
+        );
+
+        starterTemplate = _logger.chooseOne(
+          'Choose a starter template:',
+          choices: ['empty', 'counter'],
+          defaultValue: 'empty',
+        );
+      }
 
       // Adjust the template flag for `flutter create` based on the starter template
       final templateFlag =
@@ -87,6 +105,7 @@ class CreateProjectCommand extends Command<int> {
           templateFlag,
           projectName,
         ],
+        runInShell: true,
       );
       if (result.exitCode != 0) {
         _logger.err('Failed to create Flutter project: ${result.stderr}');
@@ -98,8 +117,11 @@ class CreateProjectCommand extends Command<int> {
 
       // Add the chosen state management package using `flutter pub add`
       _logger.info('Adding $stateManagement to the project...');
-      final pubAddResult =
-          await Process.run('flutter', ['pub', 'add', stateManagement]);
+      final pubAddResult = await Process.run(
+        'flutter',
+        ['pub', 'add', stateManagement],
+        runInShell: true,
+      );
       if (pubAddResult.exitCode != 0) {
         _logger.err('Failed to add $stateManagement: ${pubAddResult.stderr}');
         return ExitCode.software.code;
