@@ -4,12 +4,10 @@ import 'package:test/test.dart';
 
 void main() {
   group('CreateProjectCommand', () {
-    late Logger logger;
     late CreateProjectCommand command;
 
     setUp(() {
-      logger = Logger();
-      command = CreateProjectCommand(logger: logger);
+      command = CreateProjectCommand();
     });
 
     test('has correct name and description', () {

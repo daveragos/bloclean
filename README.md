@@ -18,19 +18,23 @@ dart pub global activate --source=path <path to this package>
 
 ## Usage
 
+
 ```sh
-# Create a new Flutter project
-$ bloclean create-project --name <project_name>
+# Create a new Flutter project (current directory)
+$ bloclean create my_project
 
-# Follow the prompts for:
-# - Organization name (e.g., com.example)
-# - Platforms to support (e.g., android, ios, web)
-# - Project template (e.g., app, package, plugin)
-# - Starter template (e.g., empty, counter)
-# - State management solution (e.g., flutter_bloc, provider, riverpod)
+# Create a new Flutter project in a specific path
+$ bloclean create my_project path/to/dir
 
-# Add a new feature to an existing project
-$ bloclean create-feature --name <feature_name>
+# Create one or more features (new syntax)
+$ bloclean create login profile
+
+# Create a new Flutter project (legacy/explicit flags)
+$ bloclean create -p my_project
+
+# Add one or more features to an existing project (legacy/explicit flags)
+$ bloclean create -f login
+$ bloclean create -f -l login,profile
 
 # Show CLI version
 $ bloclean --version
@@ -38,6 +42,13 @@ $ bloclean --version
 # Show usage help
 $ bloclean --help
 ```
+
+### Notes
+
+- If neither `-p` nor `-f` is specified:
+  - If one name is provided, it is treated as a project name.
+  - If two names are provided, the first is the project name and the second is the path.
+  - If multiple names are provided, each is treated as a feature name.
 
 ---
 
