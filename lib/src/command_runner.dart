@@ -23,9 +23,9 @@ const description =
 class BlocleanCommandRunner extends CompletionCommandRunner<int> {
   /// {@macro bloclean_command_runner}
   BlocleanCommandRunner({Logger? logger, PubUpdater? pubUpdater})
-    : _logger = logger ?? Logger(),
-      _pubUpdater = pubUpdater ?? PubUpdater(),
-      super(executableName, description) {
+      : _logger = logger ?? Logger(),
+        _pubUpdater = pubUpdater ?? PubUpdater(),
+        super(executableName, description) {
     // Add root options and flags
     argParser
       ..addFlag(
@@ -40,7 +40,7 @@ class BlocleanCommandRunner extends CompletionCommandRunner<int> {
       );
 
     // Add sub commands
-    addCommand(UpdateCommand(logger: _logger, pubUpdater: _pubUpdater));
+    addCommand(UpdateCommand(logger: _logger));
     addCommand(CreateCommand(logger: _logger));
   }
 

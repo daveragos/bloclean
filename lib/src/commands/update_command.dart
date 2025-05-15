@@ -1,19 +1,17 @@
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
-import 'package:bloclean/src/command_runner.dart';
-import 'package:bloclean/src/version.dart';
 import 'package:mason_logger/mason_logger.dart';
-
 
 /// {@template update_command}
 /// A command which updates the CLI.
 /// {@endtemplate}
 
 /// {@macro update_command}
-UpdateCommand({required Logger logger}) : _logger = logger;
+class UpdateCommand extends Command<int> {
+  UpdateCommand({required Logger logger}) : _logger = logger;
 
-final Logger _logger;
+  final Logger _logger;
 
   @override
   String get description => 'Update the CLI from the GitHub repository.';
@@ -28,17 +26,21 @@ final Logger _logger;
     _logger.info('Attempting to update bloclean from GitHub...');
 
     // Try to find the global package path
-    final whichResult = await Process.run('which', ['bloclean'], runInShell: true);
+    final whichResult =
+        await Process.run('which', ['bloclean'], runInShell: true);
     if (whichResult.exitCode != 0) {
-      _logger.err('Could not find the bloclean executable in your PATH.');
-      _logger.info('Please ensure bloclean is activated globally.');
+      _logger
+        ..err('Could not find the bloclean executable in your PATH.')
+        ..info('Please ensure bloclean is activated globally.');
       return ExitCode.software.code;
     }
 
     // Try to find the install directory (assume user cloned and activated from a path)
     // This is a best-effort guess: user should have activated from a local path
-    final envResult = await Process.run('dart', ['pub', 'global', 'list'], runInShell: true);
-    if (envResult.exitCode != 0 || !envResult.stdout.toString().contains('bloclean')) {
+    final envResult =
+        await Process.run('dart', ['pub', 'global', 'list'], runInShell: true);
+    if (envResult.exitCode != 0 ||
+        !envResult.stdout.toString().contains('bloclean')) {
       _logger.err('bloclean is not installed as a global package.');
       return ExitCode.software.code;
     }
@@ -48,16 +50,25 @@ final Logger _logger;
     // For now, assume current directory is the repo
     final currentDir = Directory.current.path;
     if (!File('$currentDir/pubspec.yaml').existsSync()) {
-      _logger.err('Could not find pubspec.yaml in the current directory.');
-      _logger.info('Please run this command from the bloclean repository directory.');
+      _logger
+        ..err('Could not find pubspec.yaml in the current directory.')
+        ..info(
+          'Please run this command from the bloclean repository directory.',
+        );
       return ExitCode.software.code;
     }
 
     // Pull latest changes
-    final pullResult = await Process.run('git', ['pull'], workingDirectory: currentDir, runInShell: true);
+    final pullResult = await Process.run(
+      'git',
+      ['pull'],
+      workingDirectory: currentDir,
+      runInShell: true,
+    );
     if (pullResult.exitCode != 0) {
-      _logger.err('Failed to pull latest changes from GitHub.');
-      _logger.err(pullResult.stderr.toString());
+      _logger
+        ..err('Failed to pull latest changes from GitHub.')
+        ..err(pullResult.stderr.toString());
       return ExitCode.software.code;
     }
     _logger.info('Successfully pulled latest changes.');
@@ -69,8 +80,9 @@ final Logger _logger;
       runInShell: true,
     );
     if (activateResult.exitCode != 0) {
-      _logger.err('Failed to activate bloclean globally.');
-      _logger.err(activateResult.stderr.toString());
+      _logger
+        ..err('Failed to activate bloclean globally.')
+        ..err(activateResult.stderr.toString());
       return ExitCode.software.code;
     }
     _logger.info('bloclean has been updated and re-activated globally!');
