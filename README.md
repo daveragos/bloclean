@@ -10,10 +10,20 @@ bloclean is a CLI tool designed to streamline Flutter project development by pro
 
 ## Getting Started 🚀
 
-Activate the CLI globally via:
+
+### Installation
+
+Clone the repository and activate the CLI globally:
 
 ```sh
-dart pub global activate --source=path <path to this package>
+# Clone the repository
+git clone https://github.com/your-username/bloclean.git
+
+# Change into the project directory
+cd bloclean
+
+# Activate the CLI globally
+dart pub global activate --source=path .
 ```
 
 ## Usage
