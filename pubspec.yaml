@@ -1,5 +1,5 @@
 name: bloclean
-description: A Very Good Project created by Very Good CLI.
+description: bloclean, A CLI tool for creating and adding clean architecture flutter projects.
 version: 0.0.1
 publish_to: none
 

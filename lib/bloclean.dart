@@ -1,4 +1,4 @@
-/// bloclean, A Very Good Project created by Very Good CLI.
+/// bloclean, A CLI tool for creating and adding clean architecture flutter projects.
 ///
 /// ```sh
 /// # activate bloclean

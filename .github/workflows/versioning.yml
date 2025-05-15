@@ -1,0 +1,71 @@
+name: Auto Version Bump
+permissions:
+  contents: writ
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push') || 
+      (github.event.pull_request.merged == true)
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+
+      - name: Install Dependencies
+        run: dart pub get
+
+      - name: Install Cider Globally
+        run: dart pub global activate cider
+
+      - name: Determine Version Bump
+        id: determine_bump
+        run: |
+          # Default to patch bump
+          BUMP_TYPE="patch"
+          
+          # Check PR labels (if PR exists)
+          if [[ "${{ github.event.pull_request.labels }}" == *"major"* ]]; then
+            BUMP_TYPE="major"
+          elif [[ "${{ github.event.pull_request.labels }}" == *"minor"* ]]; then
+            BUMP_TYPE="minor"
+          fi
+
+          # Check commit message (if push event)
+          LAST_COMMIT_MSG=$(git log -1 --pretty=%B)
+          if [[ "$LAST_COMMIT_MSG" == *"#major"* ]]; then
+            BUMP_TYPE="major"
+          elif [[ "$LAST_COMMIT_MSG" == *"#minor"* ]]; then
+            BUMP_TYPE="minor"
+          fi
+
+          echo "version_type=$BUMP_TYPE" >> $GITHUB_ENV
+
+      - name: Bump Version
+        run: dart pub global run cider bump ${{ env.version_type }}
+
+      - name: Regenerate version.dart
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Commit and Push Version Update
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add pubspec.yaml lib/src/version.dart
+          git commit -m "Bump version and regenerate version.dart [skip ci]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

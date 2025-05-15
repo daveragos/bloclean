@@ -4,7 +4,7 @@
 [![style: very good analysis][very_good_analysis_badge]][very_good_analysis_link]
 [![License: MIT][license_badge]][license_link]
 
-bloclean is a CLI tool designed to streamline Flutter project development by providing commands for creating projects and features with clean architecture.
+bloclean, A CLI tool for creating and adding clean architecture flutter projects.
 
 ---
 

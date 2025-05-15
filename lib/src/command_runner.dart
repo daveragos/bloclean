@@ -10,7 +10,8 @@ import 'package:pub_updater/pub_updater.dart';
 
 const executableName = 'bloclean';
 const packageName = 'bloclean';
-const description = 'A Very Good Project created by Very Good CLI.';
+const description =
+    'A CLI tool for creating and adding clean architecture flutter projects.';
 
 /// {@template bloclean_command_runner}
 /// A [CommandRunner] for the CLI.
@@ -21,12 +22,10 @@ const description = 'A Very Good Project created by Very Good CLI.';
 /// {@endtemplate}
 class BlocleanCommandRunner extends CompletionCommandRunner<int> {
   /// {@macro bloclean_command_runner}
-  BlocleanCommandRunner({
-    Logger? logger,
-    PubUpdater? pubUpdater,
-  })  : _logger = logger ?? Logger(),
-        _pubUpdater = pubUpdater ?? PubUpdater(),
-        super(executableName, description) {
+  BlocleanCommandRunner({Logger? logger, PubUpdater? pubUpdater})
+    : _logger = logger ?? Logger(),
+      _pubUpdater = pubUpdater ?? PubUpdater(),
+      super(executableName, description) {
     // Add root options and flags
     argParser
       ..addFlag(
@@ -147,11 +146,9 @@ class BlocleanCommandRunner extends CompletionCommandRunner<int> {
       if (!isUpToDate) {
         _logger
           ..info('')
-          ..info(
-            '''
+          ..info('''
 ${lightYellow.wrap('Update available!')} ${lightCyan.wrap(packageVersion)} \u2192 ${lightCyan.wrap(latestVersion)}
-Run ${lightCyan.wrap('$executableName update')} to update''',
-          );
+Run ${lightCyan.wrap('$executableName update')} to update''');
       }
     } catch (_) {}
   }
