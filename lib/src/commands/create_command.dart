@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:args/command_runner.dart';
 import 'package:bloclean/src/commands/create_feature_command.dart';
 import 'package:bloclean/src/commands/create_project_command.dart';
@@ -12,16 +14,17 @@ class CreateCommand extends Command<int> {
         help:
             'Create a new Flutter project (can also just provide a name without this flag)',
       )
-      ..addFlag(
+      ..addMultiOption(
         'feature',
         abbr: 'f',
         help:
             'Create one or more features (can also just provide feature names without this flag)',
+        valueHelp: 'feature1 feature2 ...',
       )
-      ..addMultiOption(
-        'list',
-        abbr: 'l',
-        help: 'List of feature names to create (comma separated or repeated)',
+      ..addOption(
+        'feature-list',
+        abbr: 'F',
+        help: 'Comma-separated list of feature names to create',
         valueHelp: 'feature1,feature2,...',
       );
   }
@@ -52,13 +55,13 @@ USAGE:
   bloclean create login profile
     - Creates two features: login and profile.
 
-  bloclean create -p my_project -f -l login,profile
-    - Creates a project and features using explicit flags (legacy style).
+  bloclean create -p my_project -f login -F login,profile
+    - Creates a project and features using explicit flags.
 
 OPTIONS:
-  -p, --project    Create a new Flutter project (can also just provide a name)
-  -f, --feature    Create one or more features (can also just provide feature names)
-  -l, --list       List of feature names to create (comma separated or repeated)
+  -p, --project         Create a new Flutter project (can also just provide a name)
+  -f, --feature         Create one or more features (can also just provide feature names)
+  -F, --feature-list    Comma-separated list of feature names to create
 
 If neither -p nor -f is specified:
   - If one name is provided, it is treated as a project name.
@@ -69,106 +72,145 @@ If neither -p nor -f is specified:
   @override
   Future<int> run() async {
     final isProject = argResults?['project'] == true;
-    final isFeature = argResults?['feature'] == true;
+    final featureList = (argResults?['feature'] as List<String>? ?? <String>[])
+        .where((f) => !f.startsWith('-'))
+        .toList();
+    final featureListOption = argResults?['feature-list'] as String?;
     final rest = argResults?.rest ?? <String>[];
 
-    // If neither -p nor -f is specified, infer intent from positional arguments
-    if (!isProject && !isFeature) {
+    // Collect all features to create
+    final allFeatures = <String>[...featureList];
+    if (featureListOption != null && featureListOption.isNotEmpty) {
+      allFeatures.addAll(
+        featureListOption
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty),
+      );
+    }
+
+    // Initialize exit code
+    var exitCode = ExitCode.success.code;
+    var projectCreated = false;
+    var featuresCreated = false;
+
+    // Handle project creation
+    String? projectName;
+    String? projectPath;
+
+    if (isProject) {
+      // Explicit -p flag
       if (rest.isEmpty) {
+        _logger.err('Project name is required after -p/--project.');
+        return ExitCode.usage.code;
+      }
+      projectName = rest[0];
+      // Check for path as second argument
+      if (rest.length > 1 && !rest[1].startsWith('-')) {
+        projectPath = rest[1];
+      }
+    } else if (rest.isNotEmpty && allFeatures.isEmpty) {
+      // No flags, infer project from positional arguments
+      projectName = rest[0];
+      if (rest.length > 1 && !rest[1].startsWith('-')) {
+        projectPath = rest[1];
+      }
+    }
+
+    if (projectName != null) {
+      final code = await CreateProjectCommand.runCreate(
+        logger: _logger,
+        projectName: projectName,
+        projectPath: projectPath,
+      );
+      if (code == ExitCode.success.code) {
+        projectCreated = true;
+        // Change to project directory to create features
+        final targetDir = projectPath != null
+            ? Directory(
+                Platform.isWindows
+                    ? '$projectPath\\$projectName'
+                    : '$projectPath/$projectName',
+              )
+            : Directory(projectName);
+        _logger.detail('Attempting to change to directory: ${targetDir.path}');
+        if (targetDir.existsSync()) {
+          Directory.current = targetDir;
+        } else if (allFeatures.isNotEmpty) {
+          _logger.err(
+            'Project directory "${targetDir.path}" not found after creation. Please ensure the project was created successfully and the path is correct.',
+          );
+          return ExitCode.software.code;
+        }
+      } else {
+        exitCode = code;
+      }
+    }
+
+    // Handle feature creation
+    if (allFeatures.isNotEmpty) {
+      // Check if we're in a Flutter project (pubspec.yaml exists)
+      if (!File('pubspec.yaml').existsSync()) {
         _logger.err(
-          'Specify at least -p (project), -f (feature), or provide a name.',
+          'No Flutter project found in the current directory. Please run this command inside a Flutter project or create a project first with -p.',
         );
         return ExitCode.usage.code;
       }
-      // If only one positional argument, treat as project name
-      if (rest.length == 1) {
-        final projectName = rest[0];
-        final code = await CreateProjectCommand.runCreate(
-          logger: _logger,
-          projectName: projectName,
-        );
-        return code;
-      }
-      // If two positional arguments, treat as project name and path
-      if (rest.length == 2) {
-        final projectName = rest[0];
-        final projectPath = rest[1];
-        final code = await CreateProjectCommand.runCreate(
-          logger: _logger,
-          projectName: projectName,
-          projectPath: projectPath,
-        );
-        return code;
-      }
-      // If more than two positional arguments, treat as features
-      var exitCode = ExitCode.success.code;
-      for (final feature in rest) {
+
+      for (final feature in allFeatures) {
         final code = await CreateFeatureCommand.runCreate(
           logger: _logger,
           featureName: feature,
         );
-        if (code != ExitCode.success.code) {
+        if (code == ExitCode.success.code) {
+          featuresCreated = true;
+        } else {
           exitCode = code;
         }
       }
-      return exitCode;
     }
 
-    // Support chaining: bloclean create -p my_project -f login -l signup,profile
-    var exitCode = ExitCode.success.code;
-    var i = 0;
-    while (i < rest.length) {
-      if (rest[i] == '-p' || rest[i] == '--project') {
-        i++;
-        if (i >= rest.length) {
-          _logger.err('Project name is required after -p/--project.');
-          return ExitCode.usage.code;
-        }
-        final projectName = rest[i];
-        final code = await CreateProjectCommand.runCreate(
-          logger: _logger,
-          projectName: projectName,
+    // Handle case where only positional arguments are provided as features
+    if (!isProject &&
+        allFeatures.isEmpty &&
+        rest.isNotEmpty &&
+        rest.length > (projectPath != null ? 2 : 1)) {
+      // Check if we're in a Flutter project
+      if (!File('pubspec.yaml').existsSync()) {
+        _logger.err(
+          'No Flutter project found in the current directory. Please run this command inside a Flutter project or create a project first with -p.',
         );
-        if (code != ExitCode.success.code) {
-          exitCode = code;
-        }
-        i++;
-      } else if (rest[i] == '-f' || rest[i] == '--feature') {
-        i++;
-        // Check for -l/--list after -f
-        final allFeatures = <String>[];
-        if (i < rest.length && (rest[i] == '-l' || rest[i] == '--list')) {
-          i++;
-          while (i < rest.length && !rest[i].startsWith('-')) {
-            allFeatures.addAll(
-              rest[i]
-                  .split(',')
-                  .map((e) => e.trim())
-                  .where((e) => e.isNotEmpty),
-            );
-            i++;
-          }
-        } else if (i < rest.length && !rest[i].startsWith('-')) {
-          allFeatures.add(rest[i]);
-          i++;
-        } else {
-          _logger.err('Feature name or -l/--list required after -f/--feature.');
-          return ExitCode.usage.code;
-        }
-        for (final feature in allFeatures) {
+        return ExitCode.usage.code;
+      }
+
+      // Treat rest as features (skip project name and path if present)
+      final featureStartIndex = projectPath != null
+          ? 2
+          : projectName != null
+              ? 1
+              : 0;
+      for (final feature in rest.skip(featureStartIndex)) {
+        if (!feature.startsWith('-')) {
           final code = await CreateFeatureCommand.runCreate(
             logger: _logger,
             featureName: feature,
           );
-          if (code != ExitCode.success.code) {
+          if (code == ExitCode.success.code) {
+            featuresCreated = true;
+          } else {
             exitCode = code;
           }
         }
-      } else {
-        _logger.err("Unknown argument: '${rest[i]}'.");
-        return ExitCode.usage.code;
       }
     }
+
+    if (!projectCreated && !featuresCreated) {
+      _logger.err(
+        'No project or feature was created. Please specify a project name, feature names, or use -p/-f/-F options.',
+      );
+      return ExitCode.usage.code;
+    }
+
     return exitCode;
   }
 }

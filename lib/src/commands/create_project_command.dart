@@ -3,13 +3,19 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:mason_logger/mason_logger.dart';
 
+/// {@template create_project_command}
+/// A command which creates a new Flutter project with a clean architecture folder structure.
+/// {@endtemplate}
 class CreateProjectCommand extends Command<int> {
+  /// {@macro create_project_command}
   CreateProjectCommand();
+
   @override
   String get description =>
-      '''Creates a new Flutter project with a clean architecture folder structure.''';
+      'Creates a new Flutter project with a clean architecture folder structure.';
+
   @override
-  String get name => 'create-project';
+  String get name => 'project';
 
   static Future<int> runCreate({
     required Logger logger,
@@ -17,16 +23,20 @@ class CreateProjectCommand extends Command<int> {
     String? projectPath,
   }) async {
     final targetDir =
-        projectPath != null ? Directory(projectPath) : Directory(projectName);
+        projectPath != null ? Directory(projectPath) : Directory.current;
     final fullProjectDir = projectPath != null
-        ? Directory('${targetDir.path}/$projectName')
-        : targetDir;
-    if (fullProjectDir.existsSync()) {
+        ? Directory(Platform.isWindows
+            ? '${targetDir.path}\\$projectName'
+            : '${targetDir.path}/$projectName')
+        : Directory(projectName);
+
+    if (await fullProjectDir.exists()) {
       logger.err(
         'Project "$projectName" already exists at ${fullProjectDir.path}.',
       );
       return ExitCode.usage.code;
     }
+
     try {
       logger.info('Creating Flutter project "$projectName"...');
       final useDefaults =
@@ -67,6 +77,12 @@ class CreateProjectCommand extends Command<int> {
           defaultValue: 'empty',
         );
       }
+
+      // Ensure target directory exists
+      if (!await targetDir.exists()) {
+        await targetDir.create(recursive: true);
+      }
+
       final templateFlag =
           starterTemplate == 'counter' ? '--sample=counter' : '-e';
       final args = [
@@ -80,17 +96,32 @@ class CreateProjectCommand extends Command<int> {
         templateFlag,
         projectName,
       ];
+
+      final progress =
+          logger.progress('Creating Flutter project "$projectName"');
       final result = await Process.run(
         'flutter',
         args,
         runInShell: true,
-        workingDirectory: projectPath,
+        workingDirectory: targetDir.path,
       );
+
       if (result.exitCode != 0) {
-        logger.err('Failed to create Flutter project: ${result.stderr}');
+        progress.fail('Failed to create Flutter project: ${result.stderr}');
         return ExitCode.software.code;
       }
+      progress.complete('Flutter project "$projectName" created successfully.');
+
+      // Verify project directory exists
+      if (!await fullProjectDir.exists()) {
+        logger
+            .err('Project directory "${fullProjectDir.path}" was not created.');
+        return ExitCode.software.code;
+      }
+
+      // Change to project directory for subsequent operations
       Directory.current = fullProjectDir;
+
       logger.info('Adding $stateManagement to the project...');
       final pubAddResult = await Process.run(
         'flutter',
@@ -101,6 +132,7 @@ class CreateProjectCommand extends Command<int> {
         logger.err('Failed to add $stateManagement: ${pubAddResult.stderr}');
         return ExitCode.software.code;
       }
+
       logger.info('Setting up clean architecture folder structure...');
       final directories = [
         'lib/config',
@@ -118,25 +150,23 @@ class CreateProjectCommand extends Command<int> {
       for (final dir in directories) {
         Directory(dir).createSync(recursive: true);
       }
+
       final readmeFile = File('README.md');
       const folderStructure = '''
 ## Folder Structure
-
-```
 lib/
-  config/
-  core/
-    bloc/
-    database/
-    di/
-    error/
-    loaders/
-    networks/
-    shared/
-    theme/
-    widgets/
-  features/
-```
+config/
+core/
+bloc/
+database/
+di/
+error/
+loaders/
+networks/
+shared/
+theme/
+widgets/
+features/
 
 ''';
       const resources = '''
@@ -147,16 +177,16 @@ lib/
 - [YouTube: Flutter Clean Architecture by Reso Coder](https://www.youtube.com/watch?v=ELFORM9fmss)
 
 ''';
-      if (readmeFile.existsSync()) {
-        readmeFile.writeAsStringSync(
+      if (await readmeFile.exists()) {
+        await readmeFile.writeAsString(
           folderStructure + resources,
           mode: FileMode.append,
         );
       } else {
-        readmeFile
-            .writeAsStringSync('# $projectName\n\n$folderStructure$resources');
+        await readmeFile
+            .writeAsString('# $projectName\n\n$folderStructure$resources');
       }
-      logger.info('Flutter project "$projectName" created successfully.');
+
       return ExitCode.success.code;
     } catch (e) {
       logger.err('Failed to create project "$projectName": $e');

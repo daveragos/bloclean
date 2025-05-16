@@ -3,13 +3,18 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:mason_logger/mason_logger.dart';
 
+/// {@template create_feature_command}
+/// A command which creates a new feature with a clean architecture folder structure.
+/// {@endtemplate}
 class CreateFeatureCommand extends Command<int> {
+  /// {@macro create_feature_command}
   CreateFeatureCommand();
+
   @override
   String get description =>
       'Creates a new feature with a clean architecture folder structure.';
   @override
-  String get name => 'create-feature';
+  String get name => 'feature';
 
   static Future<int> runCreate({
     required Logger logger,
