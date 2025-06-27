@@ -1,3 +1,4 @@
+export 'create_bloc_command.dart';
 export 'create_command.dart';
 export 'create_feature_command.dart';
 export 'create_project_command.dart';

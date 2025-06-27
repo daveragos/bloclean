@@ -42,6 +42,7 @@ class BlocleanCommandRunner extends CompletionCommandRunner<int> {
     // Add sub commands
     addCommand(UpdateCommand(logger: _logger));
     addCommand(CreateCommand(logger: _logger));
+    addCommand(CreateBlocCommand(logger: _logger));
   }
 
   @override
